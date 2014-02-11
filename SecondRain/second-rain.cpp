@@ -71,8 +71,12 @@ void readYear(int year, std::vector<std::pair<Poco::DateTime, int> >& allMinRain
 	Poco::RegularExpression rg("^"+yearStr+" ([0-9]{2}) ([0-9]{2})(.+)", Poco::RegularExpression::RE_MULTILINE);
 	Poco::RegularExpression::MatchVec matchs;
 
-	std::string content, windstr;
-	std::ifstream fin("R015707119832001.DAT");
+	std::string content, windstr, filename;
+
+	if(year < 2002) filename = "R015707119832001.DAT";
+	else filename = "R015707120022005.DAT";
+
+	std::ifstream fin(filename);
 	Poco::StreamCopier::copyToString(fin, content);
 
 	unsigned pos=0;
@@ -127,7 +131,7 @@ void readYear(int year, std::vector<std::pair<Poco::DateTime, int> >& allMinRain
 				int val = string_to<int>(mRainVal.substr(matchs3[0].offset, matchs3[0].length) );
 				//std::cout<<val<<"----";
 
-				allMinRainValMap[nowDate] = val;
+				allMinRainValMap[nowDate] = int(val/10.0+0.5);//单位0.1mm 四舍五入
 				nowDate += Poco::Timespan(60,0);
 
 				pos3 = matchs3[0].offset+1;
@@ -177,7 +181,7 @@ void printResult(vector< std::pair<Poco::DateTime, int> >& vec2 , int number)
 		// i!=vec2.end(); i++) 
 		i < vec2.begin()+number; i++)
 	{
-		std::cout<<std::endl<<Poco::DateTimeFormatter::format(i->first, "%Y-%m-%d %H:%M : ")<<i->second;
+		std::cout<<std::endl<<Poco::DateTimeFormatter::format(i->first, "%Y-%m-%d %H:%M : ")<<i->second/10.0;
 	}
 }
 
@@ -302,7 +306,7 @@ void test()
 
 	typedef vector< std::pair<Poco::DateTime, int> > VecType;
 	vector<VecType> spanRain(length);
-	for(int year=2007; year<=2013; year++)
+	for(int year=2006; year<=2013; year++)
 	{
 		VecType yearRain;
 		readYear2(year, yearRain);
@@ -327,7 +331,7 @@ void test()
 
 int main()
 {	
-	test();return 0;
+	//test();return 0;
 
 	const int length = 9;
 	int spans[length] = {5,10,15,20,30,45,60,90,120};
@@ -338,10 +342,13 @@ int main()
 	try
 	{
 		//test();
-		for(int year=1983; year<2006; year++)
+		for(int year=1983; year<=2013; year++)
 		{
 			VecType yearRain;
-			readYear(year, yearRain);
+
+			if(year<2006) readYear(year, yearRain);
+			else readYear2(year, yearRain);
+
 			std::cout<<"\n\n\n\n\n"<<year<<" 年：";
 
 			for(int i=0; i<length; i++)
