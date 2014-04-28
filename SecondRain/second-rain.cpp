@@ -152,6 +152,7 @@ void readYear(int year, std::vector<std::pair<Poco::DateTime, int> >& allMinRain
 	allMinRainValVec.assign(allMinRainValMap.begin(), allMinRainValMap.end() );
 }
 
+//按值排序并保留前100个数
 void sortSpan(int minuteSpan, 
 	const std::vector<std::pair<Poco::DateTime, int> >& allMinRainValVec,
 	vector< std::pair<Poco::DateTime, int> >& sortResult)
@@ -333,8 +334,8 @@ int main()
 {	
 	//test();return 0;
 
-	const int length = 9;
-	int spans[length] = {5,10,15,20,30,45,60,90,120};
+	const int length = 11;
+	int spans[length] = {5,10,15,20,30,45,60,90,120,150,180};
 
 	typedef vector< std::pair<Poco::DateTime, int> > VecType;
 
@@ -344,20 +345,21 @@ int main()
 		//test();
 		for(int year=1983; year<=2013; year++)
 		{
-			VecType yearRain;
+			VecType yearRain;//一年分钟降水
 
 			if(year<2006) readYear(year, yearRain);
 			else readYear2(year, yearRain);
 
 			std::cout<<"\n\n\n\n\n"<<year<<" 年：";
 
+			//对每一年 每一个时段进行排序 
 			for(int i=0; i<length; i++)
 			{
 				std::cout<<"\n\n "<<spans[i]<<" 分钟排名：";
 
 				VecType sortResult;
 				sortSpan(spans[i], yearRain, sortResult);
-				printResult(sortResult, 10);
+				printResult(sortResult, 30);
 
 				spanRain[i].insert(spanRain[i].end(), sortResult.begin(), sortResult.end() );
 			}
@@ -373,7 +375,7 @@ int main()
 			std::cout<<"\n\n\n "<<spans[i]<<" 分钟排名：";
 
 			sort(spanRain[i].begin(), spanRain[i].end(), CmpByVal);
-			printResult(spanRain[i], 10);
+			printResult(spanRain[i], 30);
 		}
 	}
 	catch(...)
