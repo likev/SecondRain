@@ -32,6 +32,12 @@ bool CmpByVal (const pair<Poco::DateTime, int>& left, const pair<Poco::DateTime,
 	return left.second>right.second;
 }
 
+bool EqualByDay (const pair<Poco::DateTime, int>& left, const pair<Poco::DateTime, int>& right)
+{
+	Poco::DateTime d1=left.first, d2= right.first;
+	return (d1.year()==d2.year() && d1.dayOfYear()==d2.dayOfYear() );
+}
+
 template <typename T>
 T string_to(const std::string & org)
 {
@@ -152,6 +158,17 @@ void readYear(int year, std::vector<std::pair<Poco::DateTime, int> >& allMinRain
 	allMinRainValVec.assign(allMinRainValMap.begin(), allMinRainValMap.end() );
 }
 
+template<class InputIt,class T, class UnaryPredicate>
+InputIt find_if(InputIt first, InputIt last, const T& value, UnaryPredicate p)
+{
+    for (; first != last; ++first) {
+        if (p(*first, value)) {
+            return first;
+        }
+    }
+    return last;
+}
+
 //按值排序并保留前100个数
 void sortSpan(int minuteSpan, 
 	const std::vector<std::pair<Poco::DateTime, int> >& allMinRainValVec,
@@ -169,7 +186,18 @@ void sortSpan(int minuteSpan,
 
 	sort(sortResult.begin(), sortResult.end(), CmpByVal);
 
-	sortResult.resize(100);
+	std::vector<std::pair<Poco::DateTime, int> >::iterator last, it;
+	//将相邻且同一天的数据删除
+	last = std::unique(sortResult.begin(), sortResult.end(), EqualByDay);
+
+	if(sortResult.size()>1000) sortResult.resize(1000);
+
+	for(it = sortResult.begin() ; it != sortResult.end(); it++){
+		last=it+1;
+		while(sortResult.end() != (last=  find_if(last , sortResult.end(), *it, EqualByDay) ) ){
+			last = sortResult.erase(last);
+		}
+	}
 }
 
 void printResult(vector< std::pair<Poco::DateTime, int> >& vec2 , int number)
@@ -180,7 +208,7 @@ void printResult(vector< std::pair<Poco::DateTime, int> >& vec2 , int number)
 	//输出前number个数
 	for(std::vector<std::pair<Poco::DateTime, int> >::iterator i=vec2.begin();
 		// i!=vec2.end(); i++) 
-		i < vec2.begin()+number; i++)
+		i < vec2.begin()+number && i!=vec2.end(); i++)
 	{
 		std::cout<<std::endl<<Poco::DateTimeFormatter::format(i->first, "%Y-%m-%d %H:%M : ")<<i->second/10.0;
 	}
@@ -337,6 +365,11 @@ int main()
 	const int length = 11;
 	int spans[length] = {5,10,15,20,30,45,60,90,120,150,180};
 
+	unsigned sortSize = 60; //输出排序长度 范围[1,100]
+	std::cout<<"请输入排序长度：";
+	std::cin>>sortSize;
+
+
 	typedef vector< std::pair<Poco::DateTime, int> > VecType;
 
 	vector<VecType> spanRain(length);
@@ -359,7 +392,7 @@ int main()
 
 				VecType sortResult;
 				sortSpan(spans[i], yearRain, sortResult);
-				printResult(sortResult, 30);
+				printResult(sortResult, sortSize);
 
 				spanRain[i].insert(spanRain[i].end(), sortResult.begin(), sortResult.end() );
 			}
@@ -375,7 +408,7 @@ int main()
 			std::cout<<"\n\n\n "<<spans[i]<<" 分钟排名：";
 
 			sort(spanRain[i].begin(), spanRain[i].end(), CmpByVal);
-			printResult(spanRain[i], 30);
+			printResult(spanRain[i], sortSize);
 		}
 	}
 	catch(...)
